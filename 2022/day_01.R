@@ -38,3 +38,10 @@ elf_list <- sapply(split(pzl_data, split_fac), function(x) sum(as.integer(x)))
 max(elf_list, na.rm = TRUE)
 
 sort(elf_list, decreasing = TRUE)[1:3] %>% sum(na.rm = TRUE)
+
+#Solution with cumsum and split
+elf_list <- sapply(split(pzl_data, as.integer(pzl_data == "") %>% cumsum), 
+                   function(x) sum(as.integer(x), na.rm = TRUE))
+max(elf_list, na.rm = TRUE)
+
+sort(elf_list, decreasing = TRUE)[1:3] %>% sum(na.rm = TRUE)

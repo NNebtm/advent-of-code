@@ -60,7 +60,7 @@ for (n in seq_along(pzl_list)) {
 # Create a vector with all directory names
 pzl_dirs <- map_chr(pzl_list, `[`, 1)
 
-# Starting from the bottom, replace each subdirectory with the sizes of files 
+# Starting from the bottom, replace each subdirectory with the total size of files 
 # contained in that subdirectory.
 for (m in rev(seq_along(pzl_list))) {
   for (n in 2:length(pzl_list[[m]])) {

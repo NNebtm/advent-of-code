@@ -40,3 +40,4 @@ to_end[1541,]
 
 #part two
 a_vec <- which(unlist(chr_list) == "a")
+to_end[a_vec,] %>% min

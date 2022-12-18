@@ -65,6 +65,94 @@ sum(range_vec) - n_beac
 xy_max <- 4000000
 # xy_max <- 20
 
+span <- function(y_test) {
+  span_list <- map(transpose(pos_tbl), function(x) {
+    x_range <- x$dist - abs(x$y_sens - y_test)
+    if (x_range < 0) {#sign(x_range) == -1
+      return(NULL)
+    } else {
+      return(c(x$x_sens - x_range, x$x_sens + x_range))
+    }
+  })
+  
+  spans <- discard(span_list, is.null)
+  spans <- spans[order(map_dbl(spans, head, 1))]
+  xi <- spans[[1]][1]
+  xf <- spans[[1]][2]
+  
+  for (n in 2:length(spans)) {
+    if (spans[[n]][1] > xf + 1) {
+      return(paste("gap", xf + 1, y_test))
+    } else {
+      xf <- max(xf, spans[[n]][2])
+    }
+  }
+  return(c(xi, xf))
+}
+
+#Estimate: 33 mins
+(start_time <- Sys.time())
+spanss <- map(1:xy_max, span)
+(gap <- discard(spanss, is.numeric))
+if(length(gap) > 0) {
+  xy <- unlist(strsplit(unlist(gap), " "))
+  tune <- 4000000*as.double(xy[2]) + as.double(xy[3])
+  print(tune)
+}
+end_time <- Sys.time()
+end_time - start_time
+
+# pos_tbl %>%
+#   mutate(y_test = 1,
+#          dist_test = y_sens - y_test) %>%
+#   mutate(x_range = dist - abs(dist_test)) %>%
+#   filter(x_range > 0) %>%
+#   mutate(xi = x_sens - x_range,
+#          xf = x_sens + x_range) %>%
+#   arrange(xi) %>%
+#   mutate(xfp = cummax(lag(xf, default = 0)),
+#          gap = xi > xfp+1) %>%
+#   filter(max(xf) < xy_max | gap)
+# 
+# (start_time <- Sys.time())
+# for (n_test in 1:400) {
+#   issue_tbl <- pos_tbl %>%
+#     mutate(x_range = dist - abs(y_sens - n_test)) %>%
+#     # filter(x_range > 0) %>%
+#     mutate(xi = x_sens - x_range,
+#            xf = x_sens + x_range) %>%
+#     arrange(xi)
+#   # %>%
+#   #   mutate(gap = xi > cummax(lag(xf, default = 0))) %>%
+#   #   filter(gap)
+#   # 
+#   # if (nrow(issue_tbl)>0) {
+#   #   print(issue_tbl)
+#   #   break
+#   # }
+# }
+# end_time <- Sys.time()
+# end_time - start_time
+# 
+# (start_time <- Sys.time())
+# issue_list <- map(1:4000, function(n_test) {
+#   issue_tbl <- pos_tbl %>%
+#     mutate(x_range = dist - abs(y_sens - n_test)) %>%
+#     filter(x_range > 0) %>%
+#     mutate(xi = x_sens - x_range,
+#            xf = x_sens + x_range) %>%
+#     arrange(xi) %>%
+#     mutate(gap = xi > cummax(lag(xf, default = 0))) %>%
+#     filter(gap)
+#   
+#   if (nrow(issue_tbl)>0) {
+#     return(n_test)
+#   }
+# })
+# unlist(issue_list)
+# end_time <- Sys.time()
+# end_time - start_time
+
 # #Finding the periphery: Way too slow.
 # periphery <- function(x, y, r) {
 #   top <- c(x+r,y)
@@ -82,88 +170,88 @@ xy_max <- 4000000
 #   return(per_list)
 # }
 
-#Find the places the sensor areas almost overlap, then test those points.
-pos_tbl %>% 
-  select(-x_beac, -y_beac) %>% 
-  mutate(idx = row_number(),
-         dist01 = abs(x_sens - x_sens[[1]]) + abs(y_sens - y_sens[[1]]) - (dist + dist[[1]]),
-         dist02 = abs(x_sens - x_sens[[2]]) + abs(y_sens - y_sens[[2]]) - (dist + dist[[2]]),
-         dist03 = abs(x_sens - x_sens[[3]]) + abs(y_sens - y_sens[[3]]) - (dist + dist[[3]]),
-         dist04 = abs(x_sens - x_sens[[4]]) + abs(y_sens - y_sens[[4]]) - (dist + dist[[4]]),
-         dist05 = abs(x_sens - x_sens[[5]]) + abs(y_sens - y_sens[[5]]) - (dist + dist[[5]]),
-         dist06 = abs(x_sens - x_sens[[6]]) + abs(y_sens - y_sens[[6]]) - (dist + dist[[6]]),
-         dist07 = abs(x_sens - x_sens[[7]]) + abs(y_sens - y_sens[[7]]) - (dist + dist[[7]]),
-         dist08 = abs(x_sens - x_sens[[8]]) + abs(y_sens - y_sens[[8]]) - (dist + dist[[8]]),
-         dist09 = abs(x_sens - x_sens[[9]]) + abs(y_sens - y_sens[[9]]) - (dist + dist[[9]]),
-         dist10 = abs(x_sens - x_sens[[10]]) + abs(y_sens - y_sens[[10]]) - (dist + dist[[10]]),
-         dist11 = abs(x_sens - x_sens[[11]]) + abs(y_sens - y_sens[[11]]) - (dist + dist[[11]]),
-         dist12 = abs(x_sens - x_sens[[12]]) + abs(y_sens - y_sens[[12]]) - (dist + dist[[12]]),
-         dist13 = abs(x_sens - x_sens[[13]]) + abs(y_sens - y_sens[[13]]) - (dist + dist[[13]]),
-         dist14 = abs(x_sens - x_sens[[14]]) + abs(y_sens - y_sens[[14]]) - (dist + dist[[14]]),
-         dist15 = abs(x_sens - x_sens[[15]]) + abs(y_sens - y_sens[[15]]) - (dist + dist[[15]]),
-         dist16 = abs(x_sens - x_sens[[16]]) + abs(y_sens - y_sens[[16]]) - (dist + dist[[16]]),
-         dist17 = abs(x_sens - x_sens[[17]]) + abs(y_sens - y_sens[[17]]) - (dist + dist[[17]]),
-         dist18 = abs(x_sens - x_sens[[18]]) + abs(y_sens - y_sens[[18]]) - (dist + dist[[18]]),
-         dist19 = abs(x_sens - x_sens[[19]]) + abs(y_sens - y_sens[[19]]) - (dist + dist[[19]]),
-         dist20 = abs(x_sens - x_sens[[20]]) + abs(y_sens - y_sens[[20]]) - (dist + dist[[20]]),
-         dist21 = abs(x_sens - x_sens[[21]]) + abs(y_sens - y_sens[[21]]) - (dist + dist[[21]]),
-         dist22 = abs(x_sens - x_sens[[22]]) + abs(y_sens - y_sens[[22]]) - (dist + dist[[22]])) %>% 
-  filter(if_any(starts_with("dis"), ~ abs(.)<=2)) %>% 
-  select(-(dist01:dist02), -dist04, -(dist07:dist08), -(dist10:dist11), -(dist15:dist17), -dist19, -(dist21:dist22))
-
-
-edge_points <- function(vec_1, vec_2, dist_1, n = 5) {
-  diff <- vec_2 - vec_1
-  new_point <- ceiling(diff*(dist_1/sum(abs(diff)))) + vec_1
-  new_points <- list(new_point)
-  if (n > 0) {
-    offset <- expand.grid(-n:n, -n:n)
-    for (xy in transpose(offset)) {
-      new_points <- append(new_points, list(new_point + unname(unlist(xy))))
-    }
-  }
-  return(new_points)
-}
-
-list0312 <- edge_points(pos_tbl[3,] %>% select(x_sens, y_sens) %>% unlist, 
-                        pos_tbl[12,] %>% select(x_sens, y_sens) %>% unlist,
-                        pos_tbl[3,]$dist)
-
-list0506 <- edge_points(pos_tbl[5,] %>% select(x_sens, y_sens) %>% unlist, 
-                        pos_tbl[6,] %>% select(x_sens, y_sens) %>% unlist,
-                        pos_tbl[5,]$dist)
-
-list0920 <- edge_points(pos_tbl[9,] %>% select(x_sens, y_sens) %>% unlist, 
-                        pos_tbl[20,] %>% select(x_sens, y_sens) %>% unlist,
-                        pos_tbl[9,]$dist)
-
-list1314 <- edge_points(pos_tbl[13,] %>% select(x_sens, y_sens) %>% unlist, 
-                        pos_tbl[14,] %>% select(x_sens, y_sens) %>% unlist,
-                        pos_tbl[13,]$dist)
-
-list1318 <- edge_points(pos_tbl[13,] %>% select(x_sens, y_sens) %>% unlist, 
-                        pos_tbl[18,] %>% select(x_sens, y_sens) %>% unlist,
-                        pos_tbl[13,]$dist)
-
-list_all <- c(list0312, list0506, list0920, list1314, list1318)
-
-map(list_all, function(vec) {
-  x = vec[1]
-  y = vec[2]
-  abs(x - pos_tbl$x_sens) + abs(y - pos_tbl$y_sens)-pos_tbl$dist}) %>% 
-  map(function(x) all(x > -10)) %>% 
-  unlist %>% which
-
-for (xy in list_all) {
-  x <- xy[1]
-  y <- xy[2]
-  # print(paste(x,y))
-  outside_vec <- abs(x - pos_tbl$x_sens) + abs(y - pos_tbl$y_sens) > pos_tbl$dist
-  print(sum(!outside_vec))
-  if (all(!outside_vec)) {
-    print(paste(x, y))
-  }
-}
+# #Find the places the sensor areas almost overlap, then test those points.
+# pos_tbl %>% 
+#   select(-x_beac, -y_beac) %>% 
+#   mutate(idx = row_number(),
+#          dist01 = abs(x_sens - x_sens[[1]]) + abs(y_sens - y_sens[[1]]) - (dist + dist[[1]]),
+#          dist02 = abs(x_sens - x_sens[[2]]) + abs(y_sens - y_sens[[2]]) - (dist + dist[[2]]),
+#          dist03 = abs(x_sens - x_sens[[3]]) + abs(y_sens - y_sens[[3]]) - (dist + dist[[3]]),
+#          dist04 = abs(x_sens - x_sens[[4]]) + abs(y_sens - y_sens[[4]]) - (dist + dist[[4]]),
+#          dist05 = abs(x_sens - x_sens[[5]]) + abs(y_sens - y_sens[[5]]) - (dist + dist[[5]]),
+#          dist06 = abs(x_sens - x_sens[[6]]) + abs(y_sens - y_sens[[6]]) - (dist + dist[[6]]),
+#          dist07 = abs(x_sens - x_sens[[7]]) + abs(y_sens - y_sens[[7]]) - (dist + dist[[7]]),
+#          dist08 = abs(x_sens - x_sens[[8]]) + abs(y_sens - y_sens[[8]]) - (dist + dist[[8]]),
+#          dist09 = abs(x_sens - x_sens[[9]]) + abs(y_sens - y_sens[[9]]) - (dist + dist[[9]]),
+#          dist10 = abs(x_sens - x_sens[[10]]) + abs(y_sens - y_sens[[10]]) - (dist + dist[[10]]),
+#          dist11 = abs(x_sens - x_sens[[11]]) + abs(y_sens - y_sens[[11]]) - (dist + dist[[11]]),
+#          dist12 = abs(x_sens - x_sens[[12]]) + abs(y_sens - y_sens[[12]]) - (dist + dist[[12]]),
+#          dist13 = abs(x_sens - x_sens[[13]]) + abs(y_sens - y_sens[[13]]) - (dist + dist[[13]]),
+#          dist14 = abs(x_sens - x_sens[[14]]) + abs(y_sens - y_sens[[14]]) - (dist + dist[[14]]),
+#          dist15 = abs(x_sens - x_sens[[15]]) + abs(y_sens - y_sens[[15]]) - (dist + dist[[15]]),
+#          dist16 = abs(x_sens - x_sens[[16]]) + abs(y_sens - y_sens[[16]]) - (dist + dist[[16]]),
+#          dist17 = abs(x_sens - x_sens[[17]]) + abs(y_sens - y_sens[[17]]) - (dist + dist[[17]]),
+#          dist18 = abs(x_sens - x_sens[[18]]) + abs(y_sens - y_sens[[18]]) - (dist + dist[[18]]),
+#          dist19 = abs(x_sens - x_sens[[19]]) + abs(y_sens - y_sens[[19]]) - (dist + dist[[19]]),
+#          dist20 = abs(x_sens - x_sens[[20]]) + abs(y_sens - y_sens[[20]]) - (dist + dist[[20]]),
+#          dist21 = abs(x_sens - x_sens[[21]]) + abs(y_sens - y_sens[[21]]) - (dist + dist[[21]]),
+#          dist22 = abs(x_sens - x_sens[[22]]) + abs(y_sens - y_sens[[22]]) - (dist + dist[[22]])) %>% 
+#   filter(if_any(starts_with("dis"), ~ abs(.)<=2)) %>% 
+#   select(-(dist01:dist02), -dist04, -(dist07:dist08), -(dist10:dist11), -(dist15:dist17), -dist19, -(dist21:dist22))
+# 
+# 
+# edge_points <- function(vec_1, vec_2, dist_1, n = 5) {
+#   diff <- vec_2 - vec_1
+#   new_point <- ceiling(diff*(dist_1/sum(abs(diff)))) + vec_1
+#   new_points <- list(new_point)
+#   if (n > 0) {
+#     offset <- expand.grid(-n:n, -n:n)
+#     for (xy in transpose(offset)) {
+#       new_points <- append(new_points, list(new_point + unname(unlist(xy))))
+#     }
+#   }
+#   return(new_points)
+# }
+# 
+# list0312 <- edge_points(pos_tbl[3,] %>% select(x_sens, y_sens) %>% unlist, 
+#                         pos_tbl[12,] %>% select(x_sens, y_sens) %>% unlist,
+#                         pos_tbl[3,]$dist)
+# 
+# list0506 <- edge_points(pos_tbl[5,] %>% select(x_sens, y_sens) %>% unlist, 
+#                         pos_tbl[6,] %>% select(x_sens, y_sens) %>% unlist,
+#                         pos_tbl[5,]$dist)
+# 
+# list0920 <- edge_points(pos_tbl[9,] %>% select(x_sens, y_sens) %>% unlist, 
+#                         pos_tbl[20,] %>% select(x_sens, y_sens) %>% unlist,
+#                         pos_tbl[9,]$dist)
+# 
+# list1314 <- edge_points(pos_tbl[13,] %>% select(x_sens, y_sens) %>% unlist, 
+#                         pos_tbl[14,] %>% select(x_sens, y_sens) %>% unlist,
+#                         pos_tbl[13,]$dist)
+# 
+# list1318 <- edge_points(pos_tbl[13,] %>% select(x_sens, y_sens) %>% unlist, 
+#                         pos_tbl[18,] %>% select(x_sens, y_sens) %>% unlist,
+#                         pos_tbl[13,]$dist)
+# 
+# list_all <- c(list0312, list0506, list0920, list1314, list1318)
+# 
+# map(list_all, function(vec) {
+#   x = vec[1]
+#   y = vec[2]
+#   abs(x - pos_tbl$x_sens) + abs(y - pos_tbl$y_sens)-pos_tbl$dist}) %>% 
+#   map(function(x) all(x > -10)) %>% 
+#   unlist %>% which
+# 
+# for (xy in list_all) {
+#   x <- xy[1]
+#   y <- xy[2]
+#   # print(paste(x,y))
+#   outside_vec <- abs(x - pos_tbl$x_sens) + abs(y - pos_tbl$y_sens) > pos_tbl$dist
+#   print(sum(!outside_vec))
+#   if (all(!outside_vec)) {
+#     print(paste(x, y))
+#   }
+# }
 
 # Brute force solution. Does not run in a reasonable time.
 # xy_max <- 20
@@ -176,30 +264,6 @@ for (xy in list_all) {
 #     }
 #   }
 # }
-
-# Second brute-force solution, expected to take 48ish hours.
-# (start_time <- Sys.time())
-# for (n_test in 1:4000) {
-#   issue_tbl <- pos_tbl %>% 
-#     mutate(y_test = n_test,
-#            dist_test = y_sens - y_test) %>% 
-#     filter(abs(dist_test) <= dist) %>% 
-#     mutate(x_range = dist - abs(dist_test)) %>% 
-#     filter(x_range > 0) %>% 
-#     mutate(xi = x_sens - x_range,
-#            xf = x_sens + x_range) %>% 
-#     arrange(xi) %>% 
-#     mutate(xfp = cummax(lag(xf, default = 0)),
-#            gap = xi > xfp+1) %>% 
-#     filter(max(xf) < xy_max | gap)
-#   
-#   if (nrow(issue_tbl)>0) {
-#     print(issue_tbl)
-#     break
-#   }
-# }
-# end_time <- Sys.time()
-# end_time - start_time
 
 # y_tests <- function(vec, n = 0) {
 #   out_vec <- vec
